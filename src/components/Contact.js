@@ -6,7 +6,12 @@ const Contact = ({ contact }) => {
     <Link to={`/contacts/${contact.id}`} className="contact__item">
             <div className="contact__header">
                 <div className="contact__image">
-                    <img src={contact.photoUrl} alt={contact.name}  />
+                    {/* <img src={contact.photoUrl} alt={contact.name}  /> */}
+                    <img
+                        src={contact.photoUrl || '/images/default_icon.jpg'}
+                        alt={contact.name}
+                        onError={(e) => { e.target.src = '/images/default_icon.jpg'; }}
+                    />
                 </div>
                 <div className="contact__details">
                     <p className="contact_name">{contact.name.substring(0, 15)} </p>
@@ -17,7 +22,7 @@ const Contact = ({ contact }) => {
                 <p><i className="bi bi-envelope"></i> {contact.email.substring(0, 20)} </p>
                 <p><i className="bi bi-geo"></i> {contact.address}</p>
                 <p><i className="bi bi-telephone"></i> {contact.phone}</p>
-                <p>{contact.status === 'Active' ? <i className='bi bi-check-circle'></i> : 
+                <p>{contact.status === 'ACTIVE' ? <i className='bi bi-check-circle'></i> : 
                     <i className='bi bi-x-circle'></i>} {contact.status}</p>
             </div>
         </Link>

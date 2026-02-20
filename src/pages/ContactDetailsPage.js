@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom';
 import { Link, useParams } from 'react-router-dom';
 import { getContact } from '../api/ContactService'
-import { updateContact } from '../api/ContactService';
+import { updateContact, deleteContact, updatePhoto } from '../api/ContactService';
 import { toastError, toastSuccess } from '../api/ToastService';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ContactDetail = () => {
     const inputRef = useRef();
+    const deleteConfirmationRef = useRef();
     const [contact, setContact] = useState({
         id: '',
         name: '',
@@ -29,20 +31,40 @@ const ContactDetail = () => {
         }
     };
 
+    const navigate = useNavigate();
+
     const selectImage = () => {
         inputRef.current.click();
     };
 
     // Handle for updating the contact photo
-    const updatePhoto = async (file) => {
+    // const updatePhotoo = async (file) => {
+    //     try {
+    //         const formData = new FormData();
+
+    //         formData.append('file', file);
+    //         formData.append('id', id);
+
+    //         await updatePhotoo(formData);
+
+    //         setContact((prev) => ({ ...prev, photoUrl: `${prev.photoUrl}?updated_at = ${new Date().getTime()}` }))
+    //         toastSuccess('Photo updated');
+    //     } catch (error) {
+    //         toastError(error.message);
+    //     }
+    // };
+
+    const updatePhotoo = async (file) => {
         try {
+            const previewUrl = URL.createObjectURL(file);
+            setContact((prev) => ({ ...prev, photoUrl: previewUrl }));
+
             const formData = new FormData();
-            formData.append('file', file, file.name);
             formData.append('id', id);
+            formData.append('file', file);
+            
 
             await updatePhoto(formData);
-            
-            setContact((prev) => ({ ...prev, photoUrl: `${prev.photoUrl}?updated_at = ${new Date().getTime()}` }))
             toastSuccess('Photo updated');
         } catch (error) {
             toastError(error.message);
@@ -55,12 +77,13 @@ const ContactDetail = () => {
     };
 
     // Handle for updating the contact information
-    const onUpdateContact = async (event) => {
+    const handleUpdateContact = async (event) => {
         // prevent form from submitting and reloading broswer
-        event.preventDefault(); 
+        event.preventDefault();
 
         try {
-            await updateContact(contact);
+            const { data } = await updateContact(contact);
+            console.log("Status from backend:", data.status);
             toastSuccess('Contact Updated');
             fetchContact(id);
         } catch (error) {
@@ -68,6 +91,23 @@ const ContactDetail = () => {
         }
 
     };
+
+    const handleDeleteContact = async (event) => {
+        event.preventDefault()
+        try {
+            await deleteContact(contact.id);
+            toggleDeleteConfirmationModal(false);
+            toastSuccess("Contact Deleted");
+            navigate('/contacts', { replace: true });
+        } catch (error) {
+            toastError(error.message);
+        }
+
+    }
+
+    const toggleDeleteConfirmationModal = (show) => {
+        show ? deleteConfirmationRef.current.show() : deleteConfirmationRef.current.close();
+    }
 
     useEffect(() => {
         fetchContact(id);
@@ -87,7 +127,7 @@ const ContactDetail = () => {
                 </div>
                 <div className='profile__settings'>
                     <div>
-                        <form onSubmit={onUpdateContact} className="form">
+                        <form onSubmit={handleUpdateContact} className="form">
                             <div className="user-details">
                                 <input type="hidden" defaultValue={contact.id} name="id" required />
                                 <div className="input-box">
@@ -111,20 +151,49 @@ const ContactDetail = () => {
                                     <input type="text" value={contact.title} onChange={onChange} name="title" required />
                                 </div>
                                 <div className="input-box">
-                                    <span className="details">Status</span>
-                                    <input type="text" value={contact.status} onChange={onChange} name="status" required />
+                                    <span className="details">Account Status</span>
+                                    <select
+                                        value={contact.status}
+                                        onChange={onChange}
+                                        name='status'
+                                        required
+                                        className="status-select"
+                                    >
+                                        <option value="">-- Select Status --</option>
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="INACTIVE">Inactive</option>
+                                    </select>
                                 </div>
                             </div>
                             <div className="form_footer">
                                 <button type="submit" className="btn">Save</button>
+                                <button onClick={() => toggleDeleteConfirmationModal(true)} type="button" className="btn btn-danger">Delete</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
+            {/* Delete Confirmation Modal */}
+            <dialog ref={deleteConfirmationRef} className="modal" id="modal">
+                <div className="modal__header">
+                    <h3>New Contact</h3>
+                    <i onClick={() => toggleDeleteConfirmationModal(false)} className="bi bi-x-lg"></i>
+                </div>
+                <div className="divider"></div>
+                <div className="modal__body">
+                    <form onSubmit={handleDeleteContact}>
+                        <div>Are you sure you want to delete this contact</div>
+                        <div className="form_footer">
+                            <button onClick={() => toggleDeleteConfirmationModal(false)} type='button' className="btn btn-danger">Cancel</button>
+                            <button type='submit' className="btn">Confirm</button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+
             <form style={{ display: 'none' }}>
-                <input type='file' ref={inputRef} onChange={(event) => updatePhoto(event.target.files[0])} name='file' accept='image/*' />
+                <input type='file' ref={inputRef} onChange={(event) => updatePhotoo(event.target.files[0])} name='file' accept='image/*' />
             </form>
         </>
     )

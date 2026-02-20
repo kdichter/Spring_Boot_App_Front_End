@@ -16,6 +16,8 @@ const ContactsPage = () => {
     // Contact list state
     const [data, setData] = useState({});
     const [currentPage, setCurrentPage] = useState(0);
+    // File state for profile photo
+    const [file, setFile] = useState(undefined);
 
     // New contact from state
     const [values, setValues] = useState({
@@ -24,14 +26,11 @@ const ContactsPage = () => {
         phone: '',
         address: '',
         title: '',
-        status: '',
+        status: 'INACTIVE',
     });
 
     // State for delete modal
     const [selectedContactId, setSelectedContactId] = useState('');
-
-    // File state for profile photo
-    const [file, setFile] = useState(undefined);
 
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -49,7 +48,6 @@ const ContactsPage = () => {
             const { data } = await getContacts(page, size);
             setData(data);
         } catch (error) {
-            console.error('Error fetching contacts:', error);
             // If unauthorized, redirect to login
             if (error.response?.status === 401 || error.response?.status === 403) {
                 handleLogout();
@@ -68,15 +66,22 @@ const ContactsPage = () => {
 
         try {
             const { data } = await saveContact(values);
-            const formData = new FormData();
-            formData.append('file', file, file.name);
-            formData.append('id', data.id);
-            const { data: photoUrl } = await updatePhoto(formData);
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('id', data.id);
+                formData.append('file', file);
+
+                await updatePhoto(formData);
+            }
+
+
 
             // Reset modal and form state
             toggleCreateModal(false);
             setFile(undefined);
             fileRef.current.value = null;
+
             setValues({
                 name: '',
                 email: '',
@@ -153,7 +158,7 @@ const ContactsPage = () => {
 
 
 
-            {/* Modal */}
+            {/* Create Modal */}
             <dialog ref={modalRef} className="modal" id="modal">
                 <div className="modal__header">
                     <h3>New Contact</h3>
@@ -169,19 +174,19 @@ const ContactsPage = () => {
                             </div>
                             <div className="input-box">
                                 <span className="details">Email</span>
-                                <input type="text" value={values.email} onChange={onChange} name='email' required />
+                                <input type="text" value={values.email} onChange={onChange} name='email' />
                             </div>
                             <div className="input-box">
                                 <span className="details">Title</span>
-                                <input type="text" value={values.title} onChange={onChange} name='title' required />
+                                <input type="text" value={values.title} onChange={onChange} name='title' />
                             </div>
                             <div className="input-box">
                                 <span className="details">Phone Number</span>
-                                <input type="text" value={values.phone} onChange={onChange} name='phone' required />
+                                <input type="text" value={values.phone} onChange={onChange} name='phone' />
                             </div>
                             <div className="input-box">
                                 <span className="details">Address</span>
-                                <input type="text" value={values.address} onChange={onChange} name='address' required />
+                                <input type="text" value={values.address} onChange={onChange} name='address' />
                             </div>
                             <div className="input-box">
                                 <span className="details">Account Status</span>
@@ -192,14 +197,15 @@ const ContactsPage = () => {
                                     required
                                     className="status-select"
                                 >
-                                    <option value="">-- Select Status --</option>
-                                    <option value="ACTIVE">Active</option>
+                                    {/* <option value="">-- Select Status --</option> */}
                                     <option value="INACTIVE">Inactive</option>
+                                    <option value="ACTIVE">Active</option>
+
                                 </select>
                             </div>
                             <div className="file-input">
                                 <span className="details">Profile Photo</span>
-                                <input type="file" onChange={(event) => setFile(event.target.files[0])} ref={fileRef} name='photo' required />
+                                <input type="file" onChange={(event) => setFile(event.target.files[0])} ref={fileRef} name='photo' />
                             </div>
                         </div>
                         <div className="form_footer">
@@ -219,7 +225,7 @@ const ContactsPage = () => {
                 <div className="divider"></div>
                 <div className="modal__body">
                     <form onSubmit={handleDeleteContact}>
-                         {/* Search input */}
+                        {/* Search input */}
                         <div className="input-box">
                             <span className="details">Search Contacts</span>
                             <input
