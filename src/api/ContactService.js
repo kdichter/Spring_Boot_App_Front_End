@@ -14,7 +14,7 @@ const getAuthHeaders = () => {
 };
 
 export async function saveContact(contact) {
-    return await axios.post(`${API_URL}/create`, contact, getAuthHeaders());
+    return await axios.post(`${API_URL}`, contact, getAuthHeaders());
 }
 
 export async function getContacts(page = 0, size = 10) {

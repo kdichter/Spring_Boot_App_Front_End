@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getContacts, saveContact, updatePhoto, updateContact } from '../api/ContactService';
+import { getContacts, saveContact, updatePhoto, deleteContact } from '../api/ContactService';
 import { logout } from '../api/AuthService';
 import 'react-toastify/dist/ReactToastify.css';
 import Header from '../components/Header';
@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const ContactsPage = () => {
     const modalRef = useRef();
+    const deleteModalRef = useRef();
     const fileRef = useRef();
 
     // Contact list state
@@ -26,12 +27,23 @@ const ContactsPage = () => {
         status: '',
     });
 
+    // State for delete modal
+    const [selectedContactId, setSelectedContactId] = useState('');
+
     // File state for profile photo
     const [file, setFile] = useState(undefined);
 
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Filter contacts based on search
+    const filteredContacts = data?.content?.filter(contact =>
+        contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const navigate = useNavigate();
 
-    const getAllContacts = async (page = 0, size = 10) => {
+    const getAllContacts = async (page = 0, size = 8) => {
         try {
             setCurrentPage(page);
             const { data } = await getContacts(page, size);
@@ -62,7 +74,7 @@ const ContactsPage = () => {
             const { data: photoUrl } = await updatePhoto(formData);
 
             // Reset modal and form state
-            toggleModal(false);
+            toggleCreateModal(false);
             setFile(undefined);
             fileRef.current.value = null;
             setValues({
@@ -80,8 +92,31 @@ const ContactsPage = () => {
         }
     }
 
-    const toggleModal = (show) => {
+    const handleDeleteContact = async (event) => {
+        event.preventDefault()
+
+        if (!selectedContactId) {
+            toastError('Please select a contact to delete');
+            return;
+        }
+
+        try {
+            await deleteContact(selectedContactId);
+            toggleDeleteModal(false);
+            getAllContacts(currentPage);
+            toastSuccess("Contact Deleted");
+        } catch (error) {
+            toastError(error.message);
+        }
+
+    }
+
+    const toggleCreateModal = (show) => {
         show ? modalRef.current.showModal() : modalRef.current.close();
+    };
+
+    const toggleDeleteModal = (show) => {
+        show ? deleteModalRef.current.showModal() : deleteModalRef.current.close();
     };
 
     const handleLogout = () => {
@@ -97,17 +132,18 @@ const ContactsPage = () => {
     return (
         <>
             <Header
-                toggleModal={toggleModal}
+                toggleCreateModal={toggleCreateModal}
+                toggleDeleteModal={toggleDeleteModal}
                 nbOfContacts={data?.totalElements || 0}
             />
-            <main classname='main'>
+            <main className='main'>
                 <div className='container'>
                     <ContactList
                         data={data}
                         currentPage={currentPage}
                         getAllContacts={getAllContacts}
                     />
-                    <div style={{textAlign: 'right' }}>
+                    <div style={{ textAlign: 'right' }}>
                         <button onClick={handleLogout} className='btn'>
                             Logout
                         </button>
@@ -121,7 +157,7 @@ const ContactsPage = () => {
             <dialog ref={modalRef} className="modal" id="modal">
                 <div className="modal__header">
                     <h3>New Contact</h3>
-                    <i onClick={() => toggleModal(false)} className="bi bi-x-lg"></i>
+                    <i onClick={() => toggleCreateModal(false)} className="bi bi-x-lg"></i>
                 </div>
                 <div className="divider"></div>
                 <div className="modal__body">
@@ -149,7 +185,17 @@ const ContactsPage = () => {
                             </div>
                             <div className="input-box">
                                 <span className="details">Account Status</span>
-                                <input type="text" value={values.status} onChange={onChange} name='status' required />
+                                <select
+                                    value={values.status}
+                                    onChange={onChange}
+                                    name='status'
+                                    required
+                                    className="status-select"
+                                >
+                                    <option value="">-- Select Status --</option>
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="INACTIVE">Inactive</option>
+                                </select>
                             </div>
                             <div className="file-input">
                                 <span className="details">Profile Photo</span>
@@ -157,8 +203,57 @@ const ContactsPage = () => {
                             </div>
                         </div>
                         <div className="form_footer">
-                            <button onClick={() => toggleModal(false)} type='button' className="btn btn-danger">Cancel</button>
+                            <button onClick={() => toggleCreateModal(false)} type='button' className="btn btn-danger">Cancel</button>
                             <button type='submit' className="btn">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+
+            {/* Delete Modal */}
+            <dialog ref={deleteModalRef} className="modal" id="modal">
+                <div className="modal__header">
+                    <h3>Delete Contact</h3>
+                    <i onClick={() => toggleDeleteModal(false)} className="bi bi-x-lg"></i>
+                </div>
+                <div className="divider"></div>
+                <div className="modal__body">
+                    <form onSubmit={handleDeleteContact}>
+                         {/* Search input */}
+                        <div className="input-box">
+                            <span className="details">Search Contacts</span>
+                            <input
+                                type="text"
+                                placeholder="Type to search..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="search-input"
+                            />
+                        </div>
+
+                        {/* Filtered dropdown */}
+                        <div className="input-box">
+                            <span className="details">Select Contact to Delete</span>
+                            <select
+                                value={selectedContactId}
+                                onChange={(e) => setSelectedContactId(e.target.value)}
+                                required
+                                className="contact-select"
+                            >
+                                <option value="">-- Choose a contact --</option>
+                                {filteredContacts?.map(contact => (
+                                    <option key={contact.id} value={contact.id}>
+                                        {contact.name} ({contact.email})
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="helper-text">
+                                Showing {filteredContacts?.length || 0} of {data?.totalElements || 0} contacts
+                            </p>
+                        </div>
+                        <div className="form_footer">
+                            <button onClick={() => toggleDeleteModal(false)} type='button' className="btn btn-danger">Cancel</button>
+                            <button type='submit' className="btn">Confirm</button>
                         </div>
                     </form>
                 </div>

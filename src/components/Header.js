@@ -1,15 +1,20 @@
 import React from 'react'
 
-const Header = ({ toggleModal, nbOfContacts }) => {
+const Header = ({ toggleCreateModal, toggleDeleteModal, nbOfContacts }) => {
 // Could also pass in props instead of {}
 // props.nbOfContacts
   return (
-    <header className='header'>
-        <div className='container'>
+    <header className = 'header'>
+        <div className = 'container'>
             <h3>Contact List ({nbOfContacts})</h3>
-            <button onClick={() => toggleModal(true)} className='btn'>
-                <i className='bi bi-plus-square'></i> Add New Contact
-            </button>
+            <div className = 'buttonGroup'>
+              <button onClick = {() => toggleCreateModal(true)} className='btn'>
+                  <i className='bi bi-plus-square'></i> Add New Contact
+              </button>
+              <button onClick  ={() => toggleDeleteModal(true)} className='btn'>
+                  <i className='bi bi-x-square'></i> Delete Contact
+              </button>
+            </div>
         </div>
     </header>
   )

@@ -217,6 +217,15 @@ i {
 	border-radius: var(--radius-5);
 	box-shadow: 0 0 2px var(--black_80);
 	transition: 0.2s ease-out;
+	margin-left: 10px;
+}
+
+.button-group {
+    display: flex;
+}
+
+.btn i {
+    margin-right: 8px;
 }
 
 .btn-danger {
@@ -244,6 +253,21 @@ i {
 	margin-top: 1.3rem;
 	margin-left: 0px;
 	margin-right: 0px;
+}
+
+.contact-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.contact-select:focus {
+    outline: none;
+    border-color: var(--selective-blue);
 }
 
 .contact__list {
@@ -545,7 +569,9 @@ dialog[open] {
 	margin-bottom: 5px;
 }
 
-.input-box input {
+/* Styles for both input and select */
+.input-box input,
+.input-box select {
 	height: 45px;
 	width: 100%;
 	outline: none;
@@ -554,11 +580,18 @@ dialog[open] {
 	padding-left: 15px;
 	border: 1px solid #e6e1e1;
 	transition: all 0.3s ease;
+	background-color: white;
 }
 
-.input-box input:is(:focus, :valid) {
-	border-color: #b9b7ba;
+.input-box select {
+	cursor: pointer;
+	appearance: none;  /* Optional: removes default arrow (see below) */
 }
+
+.input-box input:is(:focus, :valid),
+.input-box select:focus {
+	border-color: #b9b7ba;
+}     
 
 input[type=file]::file-selector-button {
 	color: var(--white);
@@ -575,6 +608,26 @@ input[type=file]::file-selector-button {
 
 input[type=file]::file-selector-button:hover {
 	background-color: var(--selective-blue-3);
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--selective-blue);
+}
+
+.helper-text {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 5px;
 }
 
 .form_footer {
